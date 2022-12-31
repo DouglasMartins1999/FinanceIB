@@ -1,0 +1,5 @@
+.DS_Store
+base
+report*.xlsx
+*.pdf
+financeIB*
