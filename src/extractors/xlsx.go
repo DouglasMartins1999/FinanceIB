@@ -60,7 +60,7 @@ func XLSXInit(filename string) interfaces.Report {
 func parseRows(rows [][]string, isCredit bool, dateIndex int, amountIndex int, descIndex int) []interfaces.Transaction {
 	var arrIndex = lo.Max([]int{dateIndex, amountIndex, descIndex})
 	var tempRows = lo.Filter(rows, func(r []string, _ int) bool {
-		return len(r) >= arrIndex
+		return len(r) >= arrIndex && r[dateIndex] != "" && r[amountIndex] != ""
 	})
 
 	return lo.Map(tempRows, func(r []string, _ int) interfaces.Transaction {
@@ -78,6 +78,10 @@ func toAmountInCents(value string) decimal.Decimal {
 }
 
 func toTime(value string) time.Time {
+	if value == "" {
+		return time.Time{}
+	}
+
 	if regexTime.FindString(value) == "" {
 		return lo.Must(time.Parse("01-02-06", value))
 	}
