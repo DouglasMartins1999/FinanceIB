@@ -1,5 +1,5 @@
 .DS_Store
-base
+*.ofx
 report*.xlsx
 *.pdf
 financeIB*

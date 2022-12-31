@@ -11,7 +11,8 @@ import (
 )
 
 var (
-	startBalance = "SALDO ANTERIOR"
+	startBalance = []string{"SALDO INICIAL", "SALDO ANTERIOR"}
+	currBalance  = []string{"SALDO FINAL", "SALDO DO DIA"}
 
 	filterExps = []string{
 		"SDO CTA/APL",
@@ -31,14 +32,13 @@ func parse(file *os.File) interfaces.Statement {
 	var content = lo.Must(ofxgo.ParseResponse(file))
 	var bankInfo = content.Bank[0].(*ofxgo.StatementResponse)
 	var transactions = structTransactions(filterTransactions(bankInfo.BankTranList.Transactions))
-	var balance, _ = decimal.NewFromString(bankInfo.BalAmt.String())
 
 	return interfaces.Statement{
 		InFlow:  getInFlow(transactions),
 		OutFlow: getOutFlow(transactions),
 		Balance: interfaces.Balance{
-			Started:   startedBalance(bankInfo.BankTranList.Transactions),
-			Current:   balance.Div(decimal.NewFromInt(100)),
+			Started:   entryValue(bankInfo.BankTranList.Transactions, startBalance, false),
+			Current:   entryValue(bankInfo.BankTranList.Transactions, currBalance, true),
 			UpdatedAt: bankInfo.DtAsOf.Time,
 		},
 	}
@@ -83,13 +83,22 @@ func structTransactions(trxs []ofxgo.Transaction) []interfaces.Transaction {
 	})
 }
 
-func startedBalance(trxs []ofxgo.Transaction) decimal.Decimal {
-	var elm, found = lo.Find(trxs, func(t ofxgo.Transaction) bool {
-		return t.Memo.String() == startBalance
-	})
+func entryValue(trxs []ofxgo.Transaction, term []string, isReverse bool) decimal.Decimal {
+	var trx ofxgo.Transaction
+	var found bool
+
+	if isReverse {
+		trx, _, found = lo.FindLastIndexOf(trxs, func(t ofxgo.Transaction) bool {
+			return lo.Contains(term, t.Memo.String())
+		})
+	} else {
+		trx, _, found = lo.FindIndexOf(trxs, func(t ofxgo.Transaction) bool {
+			return lo.Contains(term, t.Memo.String())
+		})
+	}
 
 	if found {
-		value, _ := decimal.NewFromString(elm.TrnAmt.String())
+		value, _ := decimal.NewFromString(trx.TrnAmt.String())
 		return value
 	}
 
