@@ -19,19 +19,19 @@ var (
 	sheetRowPad = 3
 )
 
-func XLSXInit(settlement interfaces.Statement) {
+func XLSXInit(settlement interfaces.Statement, filename string) {
 	var sheet = lo.Must(excelize.OpenReader(strings.NewReader(template)))
 	var saveName = "./report_" + time.Now().Format("2006-01-02_15.04.05") + ".xlsx"
 
 	fillValues(sheet, settlement.InFlow, "A", "B", "C")
 	fillValues(sheet, settlement.OutFlow, "D", "E", "F")
 
-	sheet.SetCellDefault(sheetName, "I10", settlement.Balance.Started.String())
-	sheet.SetCellDefault(sheetName, "I11", settlement.Balance.Current.String())
-	sheet.SetCellValue(sheetName, "I12", settlement.Balance.UpdatedAt)
+	sheet.SetCellDefault(sheetName, "I11", settlement.Balance.Started.String())
+	sheet.SetCellDefault(sheetName, "I12", settlement.Balance.Current.String())
+	sheet.SetCellValue(sheetName, "I13", settlement.Balance.UpdatedAt)
 
 	sheet.UpdateLinkedValue()
-	sheet.SaveAs(saveName)
+	sheet.SaveAs(lo.Ternary(filename != "", filename, saveName))
 }
 
 func fillValues(sheet *excelize.File, trxs []interfaces.Transaction, dateCol string, valueCol string, descCol string) {

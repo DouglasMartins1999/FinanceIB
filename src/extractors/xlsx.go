@@ -20,41 +20,47 @@ var (
 	regexTime = regexp.MustCompile("\\d{5}")
 )
 
-func XLSXInit(filename string) interfaces.Report {
+func XLSXInit(filename string, outputname string) interfaces.Report {
 	var sheet = lo.Must(excelize.OpenFile(filename))
 	var rows = lo.Must(sheet.GetRows(sheetName))[2:]
 
-	var inFlow = groupEquals(parseRows(rows, true, 0, 1, 2))
-	var outFlow = groupEquals(parseRows(rows, false, 3, 4, 5))
+	var inFlow = parseRows(rows, true, 0, 1, 2)
+	var outFlow = parseRows(rows, false, 3, 4, 5)
 
-	var totalInFlow = totalInCents(inFlow)
-	var totalOutFlow = totalInCents(outFlow)
+	var sheetTotalInFlow = toAmountInCents(lo.Must(sheet.GetCellValue(sheetName, "I16")))
+	var sheetTotalOutFlow = toAmountInCents(lo.Must(sheet.GetCellValue(sheetName, "I17")))
+	var sheetMonthBalance = toAmountInCents(lo.Must(sheet.GetCellValue(sheetName, "I18")))
 
-	var report = interfaces.Report{
+	var calcTotalInFlow = totalInCents(inFlow)
+	var calcTotalOutFlow = totalInCents(outFlow)
+
+	if lo.Must(strconv.ParseBool(calcOrGet(sheet, "I8"))) {
+		inFlow = groupEquals(inFlow)
+		outFlow = groupEquals(outFlow)
+	}
+
+	return interfaces.Report{
 		ReportMonth: lo.Must(strconv.ParseInt(calcOrGet(sheet, "I4"), 10, 64)) - 1,
 		ReportYear:  calcOrGet(sheet, "I5"),
 
 		WrapPage: lo.Must(strconv.ParseBool(calcOrGet(sheet, "I7"))),
-		FileName: strings.ReplaceAll(filepath.Base(filename), ".xlsx", ".pdf"),
+		FileName: lo.Ternary(outputname != "", outputname, strings.ReplaceAll(filepath.Base(filename), ".xlsx", ".pdf")),
 
-		BeforeBalance:  toAmountInCents(lo.Must(sheet.GetCellValue(sheetName, "I10"))),
-		CurrentBalance: toAmountInCents(lo.Must(sheet.GetCellValue(sheetName, "I11"))),
+		BeforeBalance:  toAmountInCents(lo.Must(sheet.GetCellValue(sheetName, "I11"))),
+		CurrentBalance: toAmountInCents(lo.Must(sheet.GetCellValue(sheetName, "I12"))),
 
-		CashTime: toTime(lo.Must(sheet.GetCellValue(sheetName, "I12"))),
+		CashTime: toTime(calcOrGet(sheet, "I13")),
 		SignTime: toTime(calcOrGet(sheet, "I6")),
 
-		TotalInFlow:  totalInFlow,
-		TotalOutFlow: totalOutFlow,
-
-		MonthBalance: totalInFlow.Sub(totalOutFlow),
+		TotalInFlow:  lo.Must(lo.Coalesce(sheetTotalInFlow, calcTotalInFlow)),
+		TotalOutFlow: lo.Must(lo.Coalesce(sheetTotalOutFlow, calcTotalOutFlow)),
+		MonthBalance: lo.Must(lo.Coalesce(sheetMonthBalance, calcTotalInFlow.Sub(calcTotalOutFlow))),
 
 		Statements: interfaces.Statement{
 			InFlow:  inFlow,
 			OutFlow: outFlow,
 		},
 	}
-
-	return report
 }
 
 func parseRows(rows [][]string, isCredit bool, dateIndex int, amountIndex int, descIndex int) []interfaces.Transaction {
@@ -73,8 +79,8 @@ func parseRows(rows [][]string, isCredit bool, dateIndex int, amountIndex int, d
 	})
 }
 
-func toAmountInCents(value string) decimal.Decimal {
-	return lo.Must(decimal.NewFromString(value))
+func toAmountInCents(value string) (result decimal.Decimal) {
+	return lo.Ternary(value != "", lo.Must(decimal.NewFromString(value)), result)
 }
 
 func toTime(value string) time.Time {
@@ -86,7 +92,7 @@ func toTime(value string) time.Time {
 		return lo.Must(time.Parse("01-02-06", value))
 	}
 
-	return time.UnixMilli((lo.Must(strconv.ParseInt(value, 10, 64)) - 25569) * 86400000)
+	return time.UnixMilli((lo.Must(strconv.ParseInt(strings.Split(value, ".")[0], 10, 64)) - 25569) * 86400000)
 }
 
 func groupEquals(trxs []interfaces.Transaction) []interfaces.Transaction {
