@@ -55,32 +55,26 @@ func collect() (input string, output string) {
 	var extension string
 	var saveOutput = false
 
-	dialog.Message("Escolha o arquivo do seu computador").Title("Somente .OFX ou .XLSX").Info()
+	dialog.Message("Escolha o arquivo do seu computador").Info()
 
 	for input == "" {
 		input, status = dialog.File().Filter("Arquivo .OFX ou .XLSX", "ofx", "xlsx", "xls").Load()
 		extension = path.Ext(input)
 
-		if status == dialog.Cancelled {
-			exit := dialog.Message("Deseja sair do programa?").YesNo()
-
-			if exit {
-				return
-			}
+		if status == dialog.Cancelled && dialog.Message("Deseja sair do programa?").YesNo() {
+			return
 		}
 	}
 
 	saveOutput = dialog.Message("Quer escolher onde salvar seu arquivo?").YesNo()
 
 	for output == "" && saveOutput {
-		output, status = dialog.File().Filter("Salvar Relatório", lo.Ternary(extension == ".ofx", "xlsx", "pdf")).Title("Exportar Relatório").Save()
+		ext := lo.Ternary(extension == ".ofx", "xlsx", "pdf")
+		title := lo.Ternary(extension == ".ofx", "Salvar Planilha", "Exportar Relatório")
+		output, status = dialog.File().Filter(fmt.Sprintf("Arquivo .%s", ext), ext).Title(title).Save()
 
-		if status == dialog.Cancelled {
-			exit := dialog.Message("Deseja usar o nome e localização padrão?").YesNo()
-
-			if exit {
-				return
-			}
+		if status == dialog.Cancelled && dialog.Message("Deseja usar o nome e localização padrão?").YesNo() {
+			return
 		}
 	}
 
