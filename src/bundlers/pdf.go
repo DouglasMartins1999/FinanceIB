@@ -355,7 +355,7 @@ func PDFInit(report interfaces.Report) {
 		})
 	})
 
-	var err = m.OutputFileAndClose("./" + report.FileName)
+	var err = m.OutputFileAndClose(report.FileName)
 
 	if err != nil {
 		fmt.Println("Could not save PDF:", err)

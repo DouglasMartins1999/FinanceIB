@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"runtime/debug"
 
 	"dotins.eu.org/financeIB/src/bundlers"
 	"dotins.eu.org/financeIB/src/extractors"
@@ -16,12 +17,12 @@ func main() {
 	var outputFileName, _ = lo.Nth(os.Args, 2)
 	var extension = path.Ext(inputFileName)
 
+	defer alert()
+
 	if inputFileName == "" {
 		inputFileName, outputFileName = collect()
 		extension = path.Ext(inputFileName)
 	}
-
-	fmt.Println(inputFileName, outputFileName, extension)
 
 	if extension == ".ofx" {
 		bundlers.XLSXInit(extractors.OFXInit(inputFileName), outputFileName)
@@ -34,12 +35,26 @@ func main() {
 	}
 }
 
+func alert() {
+	if r := recover(); r != nil {
+		if n, _ := lo.Nth(os.Args, 1); n == "" {
+			dialog.Message(fmt.Sprint(r) + "\n" + string(debug.Stack())).Title("Ocorreu um erro ao processar").Error()
+		} else {
+			fmt.Println("---- Ocorreu um erro ao processar ---")
+			fmt.Println(fmt.Sprint(r)+"\n", string(debug.Stack())+"\n")
+			fmt.Println("---- PRESSIONE QUALQUER TECLA PARA SAIR ---")
+			fmt.Scanln()
+		}
+	}
+}
+
 func collect() (input string, output string) {
 	var status error
 	var extension string
 	var saveOutput = false
 
-	dialog.Message("Somente arquivos .OFX ou .XLSX são aceitos").Title("Escolha o arquivo do seu computador").Info()
+	dialog.Message("Escolha o arquivo do seu computador").Title("Somente .OFX ou .XLSX").Info()
+
 	for input == "" {
 		input, status = dialog.File().Filter("Arquivo .OFX ou .XLSX", "ofx", "xlsx", "xls").Load()
 		extension = path.Ext(input)

@@ -1,7 +1,6 @@
 package extractors
 
 import (
-	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
@@ -44,7 +43,7 @@ func XLSXInit(filename string, outputname string) interfaces.Report {
 		ReportYear:  calcOrGet(sheet, "I5"),
 
 		WrapPage: lo.Must(strconv.ParseBool(calcOrGet(sheet, "I7"))),
-		FileName: lo.Ternary(outputname != "", outputname, strings.ReplaceAll(filepath.Base(filename), ".xlsx", ".pdf")),
+		FileName: lo.Ternary(outputname != "", outputname, strings.ReplaceAll(filename, ".xlsx", ".pdf")),
 
 		BeforeBalance:  toAmountInCents(lo.Must(sheet.GetCellValue(sheetName, "I11"))),
 		CurrentBalance: toAmountInCents(lo.Must(sheet.GetCellValue(sheetName, "I12"))),
@@ -80,7 +79,11 @@ func parseRows(rows [][]string, isCredit bool, dateIndex int, amountIndex int, d
 }
 
 func toAmountInCents(value string) (result decimal.Decimal) {
-	return lo.Ternary(value != "", lo.Must(decimal.NewFromString(value)), result)
+	if value != "" {
+		return lo.Must(decimal.NewFromString(value))
+	}
+
+	return result
 }
 
 func toTime(value string) time.Time {
