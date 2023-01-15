@@ -26,11 +26,13 @@ func main() {
 
 	if extension == ".ofx" {
 		bundlers.XLSXInit(extractors.OFXInit(inputFileName), outputFileName)
+		dialog.Message("Extrato coletado com sucesso").Info()
 		return
 	}
 
 	if extension == ".xlsx" || extension == ".xls" {
 		bundlers.PDFInit(extractors.XLSXInit(inputFileName, outputFileName))
+		dialog.Message("Relatório gerado com sucesso").Info()
 		return
 	}
 }
