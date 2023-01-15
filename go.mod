@@ -3,6 +3,7 @@ module dotins.eu.org/financeIB
 go 1.19
 
 require (
+	github.com/TheTitanrain/w32 v0.0.0-20180517000239-4f5cfb03fabf // indirect
 	github.com/aclindsa/ofxgo v0.1.3 // indirect
 	github.com/aclindsa/xml v0.0.0-20201125035057-bbd5c9ec99ac // indirect
 	github.com/boombuler/barcode v1.0.1 // indirect
@@ -19,6 +20,7 @@ require (
 	github.com/ruudk/golang-pdf417 v0.0.0-20201230142125-a7e3863a1245 // indirect
 	github.com/samber/lo v1.37.0 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
+	github.com/sqweek/dialog v0.0.0-20220809060634-e981b270ebbf // indirect
 	github.com/xuri/efp v0.0.0-20220603152613-6918739fd470 // indirect
 	github.com/xuri/excelize/v2 v2.6.1 // indirect
 	github.com/xuri/nfp v0.0.0-20220409054826-5e722a1d9e22 // indirect
